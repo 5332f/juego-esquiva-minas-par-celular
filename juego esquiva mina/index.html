@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Esquiva La Mina</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="icon" href="imagen/3.png" type="image/png">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Press Start 2P', cursive;
+            background-color: #000;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #score, #level {
+            position: absolute;
+            font-size: 14px;
+            color: #ff0;
+            text-shadow: 0 0 10px #ff0, 0 0 20px #ff0;
+            animation: pulsate 1.5s ease-in-out infinite, glow 1.5s ease-in-out infinite;
+            z-index: 10;
+        }
+        #score {
+            top: 10px;
+            left: 10px;
+        }
+        #level {
+            top: 10px;
+            right: 10px;
+        }
+        #gameCanvas {
+            background-color: #000;
+            width: 100%;
+            height: 100%;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+        }
+        #controls button {
+            padding: 8px 16px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            background-color: rgba(85, 85, 85, 0.7);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            text-shadow: 0 0 5px #ff0, 0 0 10px #ff0;
+            box-shadow: 0 0 5px #ff0, 0 0 10px #ff0;
+            transition: all 0.3s ease;
+        }
+        #controls button:hover {
+            background-color: rgba(119, 119, 119, 0.7);
+            text-shadow: 0 0 10px #ff0, 0 0 20px #ff0;
+            box-shadow: 0 0 10px #ff0, 0 0 20px #ff0;
+        }
+        #pauseButton, #fullscreenButton, #settingsIcon {
+            font-size: 24px;
+            background: none !important;
+            border: none;
+            padding: 0 !important;
+            color: #4CAF50;
+            cursor: pointer;
+        }
+        #topControls {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 20;
+        }
+        #joystick {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(51, 51, 51, 0.5);
+            border-radius: 50%;
+            position: relative;
+            touch-action: none;
+            box-shadow: 0 0 10px #ff0, 0 0 20px #ff0;
+        }
+        #joystick-handle {
+            width: 30px;
+            height: 30px;
+            background-color: #555;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 5px #ff0, 0 0 10px #ff0;
+        }
+        #gameOverScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 400px;
+            background-color: rgba(255, 255, 0, 0.9);
+            border: 4px solid #ff0;
+            border-radius: 20px;
+            padding: 20px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #000;
+            font-size: 18px;
+            text-shadow: 0 0 5px #ff0, 0 0 10px #ff0;
+            box-shadow: 0 0 20px #ff0, 0 0 40px #ff0;
+            z-index: 30;
+            animation: neonPulse 1.5s infinite alternate;
+        }
+        #gameOverScreen h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        #gameOverScreen p {
+            margin: 10px 0;
+        }
+        #gameOverScreen button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #000;
+            color: #ff0;
+            border: 2px solid #ff0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        #gameOverScreen button:hover {
+            background-color: #ff0;
+            color: #000;
+            box-shadow: 0 0 10px #ff0, 0 0 20px #ff0;
+        }
+        #settingsModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            z-index: 30;
+        }
+        #settingsContent {
+            background: #222;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+        }
+        #settingsContent h2 {
+            margin: 0 0 20px;
+            font-size: 16px;
+        }
+        #settingsContent label {
+            display: block;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        #settingsContent input {
+            margin: 5px 0;
+            width: 100%;
+        }
+        #closeSettings {
+            background: #f00;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        @keyframes pulsate {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px #ff0, 0 0 20px #ff0; }
+            50% { text-shadow: 0 0 20px #ff0, 0 0 30px #ff0; }
+            100% { text-shadow: 0 0 10px #ff0, 0 0 20px #ff0; }
+        }
+        @keyframes neonPulse {
+            from {
+                box-shadow: 0 0 20px #ff0, 0 0 40px #ff0;
+            }
+            to {
+                box-shadow: 0 0 40px #ff0, 0 0 80px #ff0;
+            }
+        }
+        @keyframes crownPulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 5px #FFD700); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 0 10px #FFD700); }
+            100% { transform: scale(1); filter: drop-shadow(0 0 5px #FFD700); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="score">Score: 0</div>
+        <div id="level">Level: 1</div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="topControls">
+            <button id="fullscreenButton">⛶</button>
+            <button id="pauseButton">🫛</button>
+            <button id="settingsIcon">⚙️</button>
+        </div>
+        <div id="controls">
+            <div>
+                <button id="startButton">Start</button>
+            </div>
+            <div id="joystick">
+                <div id="joystick-handle"></div>
+            </div>
+        </div>
+        <div id="gameOverScreen">
+            <h2>Game Over</h2>
+            <p id="finalScore">Score: 0</p>
+            <p id="finalLevel">Level: 1</p>
+            <button id="restartButton">Reiniciar</button>
+        </div>
+        <div id="settingsModal">
+            <div id="settingsContent">
+                <h2>Settings</h2>
+                <label for="joystickSizeSlider">Joystick Size: <span id="joystickSizeLabel">80px</span></label>
+                <input type="range" id="joystickSizeSlider" min="50" max="120" value="80">
+                <label for="sensitivitySlider">Sensitivity: <span id="sensitivityLabel">1</span></label>
+                <input type="range" id="sensitivitySlider" min="1" max="10" value="1">
+                <button id="closeSettings">Close</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const fullscreenButton = document.getElementById('fullscreenButton');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreElement = document.getElementById('finalScore');
+        const finalLevelElement = document.getElementById('finalLevel');
+        const restartButton = document.getElementById('restartButton');
+        const joystick = document.getElementById('joystick');
+        const joystickHandle = document.getElementById('joystick-handle');
+        const settingsIcon = document.getElementById('settingsIcon');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettings = document.getElementById('closeSettings');
+        const joystickSizeSlider = document.getElementById('joystickSizeSlider');
+        const joystickSizeLabel = document.getElementById('joystickSizeLabel');
+        const sensitivitySlider = document.getElementById('sensitivitySlider');
+        const sensitivityLabel = document.getElementById('sensitivityLabel');
+
+        let canvasWidth, canvasHeight;
+
+        const spaceship = {
+            x: 50,
+            y: 0,
+            width: 40,
+            height: 20,
+            speed: 5
+        };
+
+        let obstacles = [];
+        let stars = [];
+        let backgroundStars = [];
+        let particles = [];
+        let crown = null;
+        let score = 0;
+        let level = 1;
+        let animationId;
+        let gameStarted = false;
+        let gamePaused = false;
+        let gameSpeed = 1;
+        let obstacleSpawnRate = 0.005;
+        let gameTime = 0;
+        let lastLevelUpTime = 0;
+        let gameColor = '#000';
+
+        const colors = ['#8B0000', '#006400', '#00008B', '#8B8B00', '#8B008B', '#008B8B'];
+
+        function drawPixelArt(x, y, pixelSize, artArray, color) {
+            ctx.fillStyle = color;
+            for (let i = 0; i < artArray.length; i++) {
+                for (let j = 0; j < artArray[i].length; j++) {
+                    if (artArray[i][j] === 1) {
+                        ctx.fillRect(x + j * pixelSize, y + i * pixelSize, pixelSize, pixelSize);
+                    }
+                }
+            }
+        }
+
+        const spaceshipArt = [
+            [0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 1, 1, 1, 0, 0],
+            [0, 0, 1, 1, 1, 1, 1, 0],
+            [1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1]
+        ];
+
+        const obstacleArt = [
+            [1, 1, 1, 1],
+            [1, 0, 0, 1],
+            [1, 0, 0, 1],
+            [1, 1, 1, 1]
+        ];
+
+        const starArt = [
+            [0, 1, 0],
+            [1, 1, 1],
+            [0, 1, 0]
+        ];
+
+        const crownArt = [
+            [0, 1, 0, 1, 0],
+            [1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1]
+        ];
+
+        function createObstacle() {
+            const y = Math.random() * (canvasHeight - 40);
+            obstacles.push({x: canvasWidth, y: y, width: 20, height: 20, color: colors[Math.floor(Math.random() * colors.length)]});
+        }
+
+        function createStar() {
+            stars.push({x: canvasWidth, y: Math.random() * canvasHeight, width: 15, height: 15, color: colors[Math.floor(Math.random() * colors.length)]});
+        }
+
+        function createBackgroundStar() {
+            backgroundStars.push({x: Math.random() * canvasWidth, y: Math.random() * canvasHeight, size: Math.random() * 2 + 1, color: colors[Math.floor(Math.random() * colors.length)]});
+        }
+
+        function createParticle() {
+            particles.push({
+                x: spaceship.x + spaceship.width,
+                y: spaceship.y + spaceship.height / 2,
+                size: Math.random() * 3 + 1,
+                speedX: -Math.random() * 3 - 1,
+                speedY: Math.random() * 2 - 1,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                life: 30
+            });
+        }
+
+        function createCrown() {
+            if (!crown) {
+                crown = {
+                    x: canvasWidth,
+                    y: Math.random() * (canvasHeight - 30),
+                    width: 30,
+                    height: 18,
+                    color: '#DAA520',
+                    scale: 1,
+                    pulseDirection: 1
+                };
+            }
+        }
+
+        function drawGame() {
+            ctx.fillStyle = gameColor;
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            backgroundStars.forEach(star => {
+                ctx.fillStyle = star.color;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+            });
+            drawSpaceship();
+            obstacles.forEach(obstacle => {
+                drawPixelArt(obstacle.x, obstacle.y, 5, obstacleArt, obstacle.color);
+            });
+            stars.forEach(star => {
+                drawPixelArt(star.x, star.y, 5, starArt, star.color);
+            });
+            particles.forEach(particle => {
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            if (crown) {
+                ctx.save();
+                ctx.translate(crown.x + crown.width / 2, crown.y + crown.height / 2);
+                ctx.scale(crown.scale, crown.scale);
+                ctx.translate(-(crown.x + crown.width / 2), -(crown.y + crown.height / 2));
+                
+                ctx.shadowColor = '#DAA520';
+                ctx.shadowBlur = 10;
+                drawPixelArt(crown.x, crown.y, 6, crownArt, crown.color);
+                ctx.restore();
+                
+                crown.scale += 0.01 * crown.pulseDirection;
+                if (crown.scale > 1.2 || crown.scale < 1) {
+                    crown.pulseDirection *= -1;
+                }
+            }
+        }
+
+        function drawSpaceship() {
+            drawPixelArt(spaceship.x, spaceship.y, 4, spaceshipArt, '#fff');
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#0ff';
+            drawPixelArt(spaceship.x, spaceship.y, 4, spaceshipArt, '#0ff');
+            ctx.shadowBlur = 0;
+        }
+
+        function updateGame() {
+            gameTime += 1 / 60;
+            if (gameTime - lastLevelUpTime >= 30) {
+                level++;
+                lastLevelUpTime = gameTime;
+                levelElement.textContent = `Level: ${level}`;
+                gameSpeed += 0.5;
+                obstacleSpawnRate += 0.002;
+            }
+
+            obstacles.forEach(obstacle => {
+                obstacle.x -= gameSpeed;
+            });
+
+            obstacles = obstacles.filter(obstacle => obstacle.x + obstacle.width > 0);
+
+            stars.forEach(star => {
+                star.x -= gameSpeed;
+            });
+
+            stars = stars.filter(star => star.x + star.width > 0);
+
+            backgroundStars.forEach(star => {
+                star.x -= gameSpeed * 0.5;
+                if (star.x < 0) star.x = canvasWidth;
+            });
+
+            particles.forEach(particle => {
+                particle.x += particle.speedX;
+                particle.y += particle.speedY;
+                particle.life--;
+            });
+
+            particles = particles.filter(particle => particle.life > 0);
+
+            if (Math.random() < 0.3) createParticle();
+
+            if (crown) {
+                crown.x -= gameSpeed;
+                if (crown.x + crown.width < 0) {
+                    crown = null;
+                }
+            }
+
+            obstacles.forEach(obstacle => {
+                if (spaceship.x < obstacle.x + obstacle.width &&
+                    spaceship.x + spaceship.width > obstacle.x &&
+                    spaceship.y < obstacle.y + obstacle.height &&
+                    spaceship.y + spaceship.height > obstacle.y) {
+                    gameOver();
+                }
+            });
+
+            stars.forEach((star, index) => {
+                if (spaceship.x < star.x + star.width &&
+                    spaceship.x + spaceship.width > star.x &&
+                    spaceship.y < star.y + star.height &&
+                    spaceship.y + spaceship.height > star.y) {
+                    score += 10;
+                    scoreElement.textContent = `Score: ${score}`;
+                    stars.splice(index, 1);
+                    if (score % 30 === 0) {
+                        createCrown();
+                    }
+                }
+            });
+
+            if (crown && spaceship.x < crown.x + crown.width &&
+                spaceship.x + spaceship.width > crown.x &&
+                spaceship.y < crown.y + crown.height &&
+                spaceship.y + spaceship.height > crown.y) {
+                gameColor = colors[Math.floor(Math.random() * colors.length)];
+                crown = null;
+            }
+
+            if (Math.random() < obstacleSpawnRate) createObstacle();
+            if (Math.random() < 0.005) createStar();
+        }
+
+        function gameLoop() {
+            if (!gamePaused && gameStarted) {
+                updateGame();
+                drawGame();
+            }
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function gameOver() {
+            cancelAnimationFrame(animationId);
+            gameOverScreen.style.display = 'flex';
+            finalScoreElement.textContent = `Score: ${score}`;
+            finalLevelElement.textContent = `Level: ${level}`;
+            startButton.style.display = 'none';
+            pauseButton.style.display = 'none';
+            gameStarted = false;
+        }
+
+        function resetGame() {
+            cancelAnimationFrame(animationId);
+            spaceship.y = canvasHeight / 2;
+            obstacles = [];
+            stars = [];
+            backgroundStars = [];
+            particles = [];
+            crown = null;
+            score = 0;
+            level = 1;
+            gameSpeed = 1;
+            obstacleSpawnRate = 0.005;
+            gameTime = 0;
+            lastLevelUpTime = 0;
+            gameColor = '#000';
+            scoreElement.textContent = `Score: ${score}`;
+            levelElement.textContent = `Level: ${level}`;
+            gameStarted = false;
+            gamePaused = false;
+            startButton.textContent = 'Start';
+            startButton.style.display = 'inline-block';
+            pauseButton.textContent = '🫛';
+            pauseButton.style.display = 'inline-block';
+            gameOverScreen.style.display = 'none';
+            for (let i = 0; i < 50; i++) {
+                createBackgroundStar();
+            }
+            drawGame();
+        }
+
+        function startGame() {
+            if (!gameStarted) {
+                gameStarted = true;
+                gameLoop();
+                startButton.style.display = 'none';
+            } else {
+                resetGame();
+                gameStarted = true;
+                gameLoop();
+            }
+        }
+
+        function pauseGame() {
+            if (gameStarted) {
+                gamePaused = !gamePaused;
+                pauseButton.textContent = gamePaused ? '▶️' : '🐥';
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function resizeCanvas() {
+            canvasWidth = window.innerWidth;
+            canvasHeight = window.innerHeight;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            spaceship.y = canvasHeight / 2;
+            drawGame();
+        }
+
+        startButton.addEventListener('click', startGame);
+        pauseButton.addEventListener('click', pauseGame);
+        fullscreenButton.addEventListener('click', toggleFullscreen);
+        restartButton.addEventListener('click', () => {
+            resetGame();
+            startGame();
+            restartButton.style.display = 'none';
+        });
+        window.addEventListener('resize', resizeCanvas);
+
+        // Joystick
+        let joystickActive = false;
+        let joystickY = 0;
+        function handleJoystick(clientY) {
+            const joystickRect = joystick.getBoundingClientRect();
+            const joystickCenterY = joystickRect.top + joystickRect.height / 2;
+            const maxDistance = joystickRect.height / 2 - joystickHandle.clientHeight / 2;
+            joystickY = (clientY - joystickCenterY) / maxDistance;
+            joystickY = Math.max(-1, Math.min(1, joystickY));
+            const handleY = joystickY * maxDistance;
+            joystickHandle.style.transform = `translate(-50%, ${handleY}px)`;
+            spaceship.y += spaceship.speed * joystickY;
+            spaceship.y = Math.max(0, Math.min(canvasHeight - spaceship.height, spaceship.y));
+        }
+
+        function startJoystick(e) {
+            joystickActive = true;
+            handleJoystick(e.type.includes('touch') ? e.touches[0].clientY : e.clientY);
+        }
+
+        function moveJoystick(e) {
+            if (joystickActive) {
+                handleJoystick(e.type.includes('touch') ? e.touches[0].clientY : e.clientY);
+            }
+        }
+
+        function endJoystick() {
+            joystickActive = false;
+            joystickHandle.style.transform = 'translate(-50%, -50%)';
+            joystickY = 0;
+        }
+
+        joystick.addEventListener('mousedown', startJoystick);
+        joystick.addEventListener('touchstart', startJoystick);
+        document.addEventListener('mousemove', moveJoystick);
+        document.addEventListener('touchmove', moveJoystick);
+        document.addEventListener('mouseup', endJoystick);
+        document.addEventListener('touchend', endJoystick);
+
+        // Settings
+        settingsIcon.addEventListener('click', () => {
+            settingsModal.style.display = 'flex';
+        });
+
+        closeSettings.addEventListener('click', () => {
+            settingsModal.style.display = 'none';
+        });
+
+        joystickSizeSlider.addEventListener('input', () => {
+            const size = joystickSizeSlider.value;
+            joystick.style.width = `${size}px`;
+            joystick.style.height = `${size}px`;
+            joystickSizeLabel.textContent = `${size}px`;
+        });
+
+        sensitivitySlider.addEventListener('input', () => {
+            sensitivityLabel.textContent = sensitivitySlider.value;
+            spaceship.speed = sensitivitySlider.value / 2;
+        });
+
+        // Previene el desplazamiento de la página en dispositivos móviles
+        document.body.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        // Inicializa el juego
+        resizeCanvas();
+        resetGame();
+    </script>
+</body>
+</html>
